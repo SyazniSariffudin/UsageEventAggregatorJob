@@ -1,0 +1,58 @@
+version: "3.9"
+services:
+  hbase:
+    image: dajobe/hbase:latest
+    container_name: hbase
+    environment:
+      - HBASE_ROOTDIR=/data/hbase
+      - HBASE_ZOOKEEPER_QUORUM=hbase
+    ports:
+      - "16010:16010" # HBase Web UI
+      - "16020:16020" # RegionServer Port
+      - "16000:16000" # Master Port
+    volumes:
+      - ./init-hbase.sh:/usr/local/bin/init-hbase.sh
+    networks:
+      - spark-network
+
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8080:8080" # Spark Web UI
+      - "7077:7077" # Spark Master Port
+    networks:
+      - spark-network
+
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    networks:
+      - spark-network
+
+  submitter:
+    image: bitnami/spark:latest
+    container_name: spark-submitter
+    depends_on:
+      - spark-master
+      - spark-worker
+      - hbase
+    volumes:
+      - ./target:/opt/spark-apps # Mount your local JAR directory to the container
+    networks:
+      - spark-network
+
+networks:
+  spark-network:
+    driver: bridge
+
+volumes:
+  hbase-data:
+    driver: local
