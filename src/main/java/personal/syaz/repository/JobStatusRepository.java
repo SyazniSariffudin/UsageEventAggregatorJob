@@ -1,9 +1,7 @@
 package personal.syaz.repository;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -26,7 +24,9 @@ public class JobStatusRepository {
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
             Put put = new Put(Bytes.toBytes(jobStatusDto.getJobId()));
-            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("status"), Bytes.toBytes(jobStatusDto.isSuccess()));
+            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("status"), Bytes.toBytes(String.valueOf(jobStatusDto.isSuccess())));
+            if (jobStatusDto.getProcessMonth() != null)
+                put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("yearmonth_to_process"), Bytes.toBytes(jobStatusDto.getProcessMonth()));
             put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("timestamp"), Bytes.toBytes(timestamp));
             put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("message"), Bytes.toBytes(jobStatusDto.getMessage()));
 

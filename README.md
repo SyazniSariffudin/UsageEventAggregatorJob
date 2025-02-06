@@ -38,14 +38,38 @@ The program is built using:
 ### Directory Guide
 
     .
+    ├── src
+    │   ├── main
+    │       └── resources
+    |             └── config.properties # to define spark master
+    |             └── hbase-site.xml # Hbase connection details
     ├── init-hbase.sh  # Script to insert test data
 
 ---
+
+### Table Description
+
+ Table                  | Description                                          |
+------------------------|------------------------------------------------------|
+ usage_event            | Contains usage record of user                        |
+ usage_event_aggregator | Contains aggregated usage record by user-id          |
+ job_status             | Contains job status record, either success or failed |
+
+---
+
 ### Database table
-usage_event | Contains usage record of user                        |
---- |------------------------------------------------------|
-usage_event | Contains aggregated usage record by user-id          |
-job_status | Contains job status record, either success or failed |
+
+#### usage_event (source)
+
+![plot](./SampleOutput/UsageEvent.png)
+
+#### usage_event_aggregator (output)
+
+![plot](./SampleOutput/UsageEventAggregator.png)
+
+#### job_status (monitoring)
+
+![plot](./SampleOutput/JobStatus.png)
 
 ---
 

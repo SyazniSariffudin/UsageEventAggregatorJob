@@ -52,6 +52,7 @@ public class UsageEventAggregatorJob {
         // Parse input to YearMonth
         YearMonth yearMonthToProcess = optionalYearMonth.get();
         JobStatusDto jobStatusDto = new JobStatusDto();
+        JobStatusRepository jobStatusRepository = new JobStatusRepository();
         jobStatusDto.setProcessMonth(yearMonthToProcess.toString());
 
         try (SparkSession spark = SparkFactory.getInstance()) {
@@ -66,8 +67,12 @@ public class UsageEventAggregatorJob {
             jobStatusDto.setSuccess(Boolean.FALSE);
             jobStatusDto.setMessage(e.getMessage());
         } finally {
-            JobStatusRepository jobStatusRepository = new JobStatusRepository();
-            jobStatusRepository.insertJobStatus(jobStatusDto);
+            try {
+                jobStatusRepository.insertJobStatus(jobStatusDto);
+                logger.info("Job status successfully inserted.");
+            } catch (Exception e) {
+                logger.error("Failed to insert job status:", e);
+            }
         }
     }
 
