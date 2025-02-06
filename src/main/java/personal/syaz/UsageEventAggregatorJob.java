@@ -22,6 +22,7 @@ import personal.syaz.factory.SparkFactory;
 import personal.syaz.repository.JobStatusRepository;
 import personal.syaz.repository.UsageEventRepository;
 import personal.syaz.util.DateUtils;
+import personal.syaz.util.HbaseUtil;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -53,11 +54,10 @@ public class UsageEventAggregatorJob {
         JobStatusDto jobStatusDto = new JobStatusDto();
         jobStatusDto.setProcessMonth(yearMonthToProcess.toString());
 
-        SparkSession spark = SparkFactory.getInstance();
-        try {
+        try (SparkSession spark = SparkFactory.getInstance()) {
             JavaRDD<UsageEvent> usageEventRDD = getUsageEventJavaRDD(spark, yearMonthToProcess);
             JavaPairRDD<String, Long> groupedByUserRDD = groupedUsageEventByUserRDD(usageEventRDD);
-            writeAggregateResult(groupedByUserRDD);
+            writeAggregateResult(groupedByUserRDD, String.valueOf(yearMonthToProcess));
 
             jobStatusDto.setSuccess(Boolean.TRUE);
             jobStatusDto.setMessage("Job completed successfully.");
@@ -68,14 +68,6 @@ public class UsageEventAggregatorJob {
         } finally {
             JobStatusRepository jobStatusRepository = new JobStatusRepository();
             jobStatusRepository.insertJobStatus(jobStatusDto);
-            try {
-                if (spark != null) {
-                    spark.stop();
-                    logger.info("SparkSession stopped.");
-                }
-            } catch (Exception e) {
-                logger.error("Failed to close resources:", e);
-            }
         }
     }
 
@@ -122,7 +114,7 @@ public class UsageEventAggregatorJob {
                 .reduceByKey(Long::sum);
     }
 
-    private static void writeAggregateResult(JavaPairRDD<String, Long> groupedByUserRDD) throws IOException {
+    private static void writeAggregateResult(JavaPairRDD<String, Long> groupedByUserRDD, String yearMonthToProcess) throws IOException {
         String outputTable = "usage_event_aggregator";
 
         // Write results back to HBase
@@ -137,8 +129,11 @@ public class UsageEventAggregatorJob {
 
             logger.info("Inserting record into {}: userId={}, totalAmount={}", outputTable, userId, totalAmount);
 
-            Put put = new Put(Bytes.toBytes(userId));
-            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("total_amount"), Bytes.toBytes(totalAmount));
+            //For data idempotency and allow re-run
+            Put put = new Put(HbaseUtil.generateRowKeyWithPrefix(userId, yearMonthToProcess));
+            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("user_id"), Bytes.toBytes(userId));
+            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("total_amount"), Bytes.toBytes(totalAmount.toString()));
+            put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("yearmonth_to_process"), Bytes.toBytes(yearMonthToProcess));
 
             try {
                 aggregatorTable.put(put);
