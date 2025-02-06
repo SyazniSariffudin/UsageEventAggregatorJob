@@ -23,9 +23,14 @@ insert_dummy_data() {
   echo "put '$table_name', 'row1', '$column_family:amount', '1'" | hbase shell
 
   echo "put '$table_name', 'row2', '$column_family:id', '2'" | hbase shell
-  echo "put '$table_name', 'row2', '$column_family:user_id', 'user-2'" | hbase shell
-  echo "put '$table_name', 'row2', '$column_family:date', '2025-01-02'" | hbase shell
-  echo "put '$table_name', 'row2', '$column_family:amount', '1'" | hbase shell
+  echo "put '$table_name', 'row2', '$column_family:user_id', 'user-1'" | hbase shell
+  echo "put '$table_name', 'row2', '$column_family:date', '2025-01-11'" | hbase shell
+  echo "put '$table_name', 'row2', '$column_family:amount', '2'" | hbase shell
+
+  echo "put '$table_name', 'row3', '$column_family:id', '3'" | hbase shell
+  echo "put '$table_name', 'row3', '$column_family:user_id', 'user-2'" | hbase shell
+  echo "put '$table_name', 'row3', '$column_family:date', '2025-01-02'" | hbase shell
+  echo "put '$table_name', 'row3', '$column_family:amount', '20'" | hbase shell
 }
 
 check_hbase_running() {

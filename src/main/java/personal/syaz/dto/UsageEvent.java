@@ -1,8 +1,17 @@
 package personal.syaz.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class UsageEvent implements Serializable {
 
     private static final long serialVersionUID = 627526094215256151L;
@@ -11,37 +20,4 @@ public class UsageEvent implements Serializable {
     private String userId;
     private LocalDate date;
     private long amount;
-
-    public UsageEvent(long id, String userId, LocalDate date, long amount) {
-        this.id = id;
-        this.userId = userId;
-        this.date = date;
-        this.amount = amount;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public long getAmount() {
-        return amount;
-    }
-
-    @Override
-    public String toString() {
-        return "UsageEvent{" +
-                "id='" + id + '\'' +
-                ", userId='" + userId + '\'' +
-                ", date='" + date + '\'' +
-                ", amount=" + amount +
-                '}';
-    }
 }

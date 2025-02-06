@@ -2,7 +2,10 @@ package personal.syaz;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -22,11 +25,11 @@ import personal.syaz.util.DateUtils;
 import scala.Tuple2;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 import static org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.convertScanToString;
+import static personal.syaz.util.DateUtils.safelyParseYearMonth;
 
 public class UsageEventAggregatorJob {
     private static final Logger logger = LoggerFactory.getLogger(UsageEventAggregatorJob.class);
@@ -39,15 +42,25 @@ public class UsageEventAggregatorJob {
             return;
         }
 
-        // Parse input to YearMonth
-        YearMonth yearMonth = YearMonth.parse(args[0], DateTimeFormatter.ofPattern("yyyy-MM"));
+        Optional<YearMonth> optionalYearMonth = safelyParseYearMonth(args[0]);
+        if (!optionalYearMonth.isPresent()) {
+            logger.error("Failed to parse the provided date argument.");
+            return;
+        }
 
+        // Parse input to YearMonth
+        YearMonth yearMonthToProcess = optionalYearMonth.get();
         JobStatusDto jobStatusDto = new JobStatusDto();
+        jobStatusDto.setProcessMonth(yearMonthToProcess.toString());
+
         SparkSession spark = SparkFactory.getInstance();
         try {
-            JavaRDD<UsageEvent> usageEventRDD = getUsageEventJavaRDD(spark, yearMonth);
+            JavaRDD<UsageEvent> usageEventRDD = getUsageEventJavaRDD(spark, yearMonthToProcess);
             JavaPairRDD<String, Long> groupedByUserRDD = groupedUsageEventByUserRDD(usageEventRDD);
             writeAggregateResult(groupedByUserRDD);
+
+            jobStatusDto.setSuccess(Boolean.TRUE);
+            jobStatusDto.setMessage("Job completed successfully.");
         } catch (Exception e) {
             logger.error("An error occurred while processing HBase data with Spark:", e);
             jobStatusDto.setSuccess(Boolean.FALSE);

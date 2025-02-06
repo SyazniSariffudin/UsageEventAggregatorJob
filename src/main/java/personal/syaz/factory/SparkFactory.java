@@ -11,7 +11,7 @@ import java.util.Properties;
 public class SparkFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(SparkFactory.class);
-    private static SparkSession sparkSession;
+    private static volatile SparkSession sparkSession;
 
     private SparkFactory() {
         // Private constructor to prevent instantiation
