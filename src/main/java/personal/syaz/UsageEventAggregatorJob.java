@@ -116,7 +116,8 @@ public class UsageEventAggregatorJob {
         logger.info("Grouping filtered data by user_id and summing the amount...");
         return usageEventRDD
                 .mapToPair(event -> new Tuple2<>(event.getUserId(), event.getAmount()))
-                .reduceByKey(Long::sum);
+                .reduceByKey(Long::sum)
+                .mapValues(output -> output * 2);
     }
 
     private static void writeAggregateResult(JavaPairRDD<String, Long> groupedByUserRDD, String yearMonthToProcess) throws IOException {
